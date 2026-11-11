@@ -1,0 +1,41 @@
+# Environments, caches and local settings
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.vscode/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.asv
+*.autosave
+
+# Raw ECG, derived signals and model files
+/data/
+*.atr
+*.hea
+*.dat
+*.npy
+*.npz
+*.mat
+*.joblib
+*.pkl
+*.pt
+*.pth
+*.onnx
+*.h5
+*.keras
+
+# Row-level or signal-derived experiment outputs
+/results/models/
+/results/figures/
+/results/*_predictions.csv
+/results/group_holdout/*_predictions.csv
+/results/group_holdout/split.csv
+/results/missed_beats.csv
+/results/adaptive_fn_diagnostics.csv
