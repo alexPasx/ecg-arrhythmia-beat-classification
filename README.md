@@ -1,6 +1,20 @@
 # ECG Arrhythmia Detection & Analysis
 
+![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB)
+
 Offline classification of annotated ECG beats from the MIT-BIH Arrhythmia Database. Four classical models predict one label per beat: **N** (normal), **V** (premature ventricular contraction), or **F** (fusion of a ventricular and a normal beat). Both evaluation protocols split by patient group and score individual beats. The repository also contains exploratory QRS detection scripts in Python and MATLAB.
+
+## Repository structure
+
+```text
+.
+├── python/                 # Data download, feature extraction, training and evaluation
+├── matlab/                 # Exploratory ECG preprocessing and QRS detection
+├── results/                # Evaluation metrics and confusion matrices
+│   └── group_holdout/     # Holdout metrics and confusion matrices
+├── requirements.txt       # Pinned Python dependencies
+└── README.md
+```
 
 ## Data and features
 
@@ -14,7 +28,7 @@ The database contains 48 recordings from 47 subjects. The feature table contains
 | V | 7,129 |
 | F | 802 |
 
-The extractor uses the first recorded channel at 360 Hz and applies a third-order Butterworth 5–18 Hz bandpass in forward and reverse directions to each recording. It extracts a window from 250 ms before to 450 ms after the reference annotation, skipping windows that cross a recording boundary. Each beat has 260 features: 252 filtered samples, previous and next RR intervals, and six amplitude, energy and slope statistics. RR intervals are computed using neighbouring annotations from a wider set of beat symbols.
+The extractor uses the first recorded channel at 360 Hz and applies a third-order Butterworth 5–18 Hz bandpass in forward and reverse directions to each recording. It extracts a window from 250 ms before to 450 ms after the reference annotation, skipping windows that cross a recording boundary. Each beat has 260 features: 252 filtered samples, previous and next RR intervals, and six amplitude, energy and slope statistics. Each RR interval is the time to the nearest earlier or later reference annotation in the same recording whose symbol is in `BEAT_SYMBOLS`: `N L R B A a J S V r F e j n E / f Q ?`. This includes paced beats (`/`) and skips annotations outside that list, such as the signal-quality marker (`~`).
 
 ## Evaluation and results
 
@@ -53,11 +67,12 @@ The [holdout results](results/group_holdout/holdout_results.csv) include precisi
 - **Class imbalance and limited F support.** N accounts for about 90.4% of the extracted beats. Across the four holdout models, only one to four of the 28 F beats are correctly classified. Low F precision makes overall accuracy a poor guide to performance on this class.
 - **Sensitivity to the split.** Linear SVM leads on pooled cross-validation macro F1, while KNN leads on the single holdout. The protocols use different training sizes and class distributions. Their scores provide internal comparisons on one database. No external validation cohort was evaluated.
 - **Reference annotations and future context.** Beat positions and RR intervals use reference annotations. The post-beat window, next RR interval and forward–reverse filtering use future signal or annotation information. The results describe offline classification given reference beat locations. The separate QRS experiments do not establish end-to-end classification performance.
+- **Benchmark comparability.** The three-symbol task focuses on distinguishing normal, PVC and fusion beats with their original WFDB labels. Scores are specific to that label set and these splits, so they cannot be compared directly with five-class AAMI results.
 - **Scope.** Evaluation covers the first recorded channel and three selected annotation symbols. The reported metrics do not establish patient-level diagnostic or clinical performance.
 
 ## Reproduce the classification experiments
 
-From the repository root, use Python 3.11 (local audit used 3.11.9). The following commands are for PowerShell. The downloader and feature extractor query PhysioNet for the record list. The run needs local disk space for the raw signals and a feature CSV of about 446 MB. Training both SVMs across all folds can take several minutes.
+From the repository root, use Python 3.11 (local audit used 3.11.9). The following commands are for PowerShell. The downloader and feature extractor query PhysioNet for the record list. The run needs local disk space for the raw signals and a feature CSV of about 446 MB.
 
 ```powershell
 py -3.11 -m venv .venv
@@ -72,7 +87,13 @@ py -3.11 -m venv .venv
 
 The training commands regenerate CSV reports in `results/` and `results/group_holdout/` and overwrite prior reports at those paths. Raw records, features, per-beat predictions, split exports and figures are local artifacts. `train_ml_classifiers.py` is an exploratory fold-1 baseline. The exploratory MATLAB preprocessing and QRS scripts use Signal Processing Toolbox and record 208 exports. The empty test and model scaffolds do not provide automated coverage or implemented neural models.
 
+The archived runs logged about **13 min** of model fitting across all models and CV folds and **1 min 49 s** for the holdout. These totals exclude downloads, feature extraction and prediction. The CPU model was not recorded with the run, and end-to-end runtime depends on the machine.
+
 The archived reports were checked by regenerating both splits and recalculating scores from saved predictions in the pinned local environment. Model training and the MATLAB scripts were not rerun during that audit.
+
+## Data attribution
+
+The results contain information from the [MIT-BIH Arrhythmia Database v1.0.0](https://physionet.org/content/mitdb/1.0.0/) by George B. Moody and Roger G. Mark, provided by PhysioNet under the [Open Data Commons Attribution License v1.0](https://opendatacommons.org/licenses/by/1-0/). The recordings and annotations are downloaded separately from PhysioNet.
 
 ## References
 
